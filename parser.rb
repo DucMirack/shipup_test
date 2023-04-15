@@ -18,4 +18,8 @@ class Parser
   def input_content
     @input_content ||= File.open('data/input.json').read
   end
+
+  def expected_output
+    @expected_output ||= JSON.parse(File.open('data/expected_output.json').read)
+  end
 end

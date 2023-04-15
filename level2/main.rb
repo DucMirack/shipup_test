@@ -3,27 +3,21 @@ require 'date'
 require_relative '../carrier'
 require_relative '../package'
 require_relative '../parser'
+require_relative '../delivery'
 require 'byebug'
 
 class Level2
-  DELAY_MARGIN_DAYS = 1
-
   def call
     deliveries = packages.map do |package|
       package = Package.new(package)
       carrier_data = carriers.find { |carrier| carrier["code"] == package.carrier }
       carrier = Carrier.new(carrier_data)
-      expected_delivery = package.shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
-      delivery_range_days = (package.shipping_date..expected_delivery)
-      unless carrier.saturday_deliveries
-        next_saturday = package.date_of_next?("Saturday")
-        expected_delivery += 1 if delivery_range_days.cover?(next_saturday)
-      end
-      next_sunday = package.date_of_next?("Sunday")
-      expected_delivery += 1 if delivery_range_days.cover?(next_sunday)
+      delivery = Delivery.new(package, carrier)
+      delivery.compute_expected_date_with_weekend_days
+
       {
         "package_id" => package.id,
-        "expected_delivery" => expected_delivery.to_s,
+        "expected_delivery" => delivery.expected_date.to_s,
       }
     end
     hash = { "deliveries" => deliveries }

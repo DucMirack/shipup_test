@@ -4,6 +4,7 @@ require_relative '../carrier'
 require_relative '../package'
 require_relative '../parser'
 require_relative '../delivery'
+require_relative '../oversea_delay_calculator'
 require 'byebug'
 
 class Level3
@@ -13,24 +14,13 @@ class Level3
       carrier_data = carriers.find { |carrier| carrier["code"] == package.carrier }
       carrier = Carrier.new(carrier_data)
       delivery = Delivery.new(package, carrier)
-
-      expected_delivery = delivery.expected_delivery_date
-
-      unless carrier.saturday_deliveries
-        next_saturday = package.date_of_next?("Saturday")
-        expected_delivery += 1 if delivery.range_days.cover?(next_saturday)
-      end
-
-      next_sunday = package.date_of_next?("Sunday")
-      expected_delivery += 1 if delivery.range_days.cover?(next_sunday)
-
-      distance_kilometers = country_distances[package.origin_country][package.destination_country]
-      oversea_delay = distance_kilometers / carrier.oversea_delay_threshold
-      expected_delivery += oversea_delay
+      delivery.compute_expected_date_with_weekend_days
+      oversea_delay = OverseaDelayCalculator.new(country_distances, package.origin_country, package.destination_country, carrier.oversea_delay_threshold).compute
+      delivery.expected_date += oversea_delay
 
       {
         "package_id" => package.id,
-        "expected_delivery" => expected_delivery.to_s,
+        "expected_delivery" => delivery.expected_date.to_s,
         "oversea_delay" => oversea_delay,
       }
     end
