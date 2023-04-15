@@ -13,14 +13,13 @@ class Level2
       package = Package.new(package)
       carrier_data = carriers.find { |carrier| carrier["code"] == package.carrier }
       carrier = Carrier.new(carrier_data)
-      shipping_date = Date.parse(package.shipping_date)
-      expected_delivery = shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
-      delivery_range_days = (shipping_date..expected_delivery)
+      expected_delivery = package.shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
+      delivery_range_days = (package.shipping_date..expected_delivery)
       unless carrier.saturday_deliveries
-        next_saturday = date_of_next("Saturday", from: package.shipping_date)
+        next_saturday = package.date_of_next?("Saturday")
         expected_delivery += 1 if delivery_range_days.cover?(next_saturday)
       end
-      next_sunday = date_of_next("Sunday", from: package.shipping_date)
+      next_sunday = package.date_of_next?("Sunday")
       expected_delivery += 1 if delivery_range_days.cover?(next_sunday)
       {
         "package_id" => package.id,
@@ -31,12 +30,6 @@ class Level2
     puts "Input: #{hash}"
     puts "Output: #{expected_output}"
     puts "Input and output are the same : #{hash == expected_output}"
-  end
-
-  def date_of_next(day, from:)
-    date = Date.parse(from)
-    date += 1 until date.strftime("%A") == day
-    date
   end
 
   def packages
