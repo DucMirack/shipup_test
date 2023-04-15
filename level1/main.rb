@@ -13,8 +13,7 @@ class Level1
       package = Package.new(package)
       carrier_data = carriers.find { |carrier| carrier["code"] == package.carrier }
       carrier = Carrier.new(carrier_data)
-      shipping_date = Date.parse(package.shipping_date)
-      expected_delivery = shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
+      expected_delivery = package.shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
       {
         "package_id" => package.id,
         "expected_delivery" => expected_delivery.to_s,

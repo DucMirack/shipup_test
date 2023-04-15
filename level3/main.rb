@@ -3,26 +3,26 @@ require 'date'
 require_relative '../carrier'
 require_relative '../package'
 require_relative '../parser'
+require_relative '../delivery'
 require 'byebug'
 
 class Level3
-  DELAY_MARGIN_DAYS = 1
-
   def call
     deliveries = packages.map do |package|
       package = Package.new(package)
       carrier_data = carriers.find { |carrier| carrier["code"] == package.carrier }
       carrier = Carrier.new(carrier_data)
-      expected_delivery = package.shipping_date + carrier.delivery_promise + DELAY_MARGIN_DAYS
-      delivery_range_days = (package.shipping_date..expected_delivery)
+      delivery = Delivery.new(package, carrier)
+
+      expected_delivery = delivery.expected_delivery_date
 
       unless carrier.saturday_deliveries
         next_saturday = package.date_of_next?("Saturday")
-        expected_delivery += 1 if delivery_range_days.cover?(next_saturday)
+        expected_delivery += 1 if delivery.range_days.cover?(next_saturday)
       end
 
       next_sunday = package.date_of_next?("Sunday")
-      expected_delivery += 1 if delivery_range_days.cover?(next_sunday)
+      expected_delivery += 1 if delivery.range_days.cover?(next_sunday)
 
       distance_kilometers = country_distances[package.origin_country][package.destination_country]
       oversea_delay = distance_kilometers / carrier.oversea_delay_threshold
