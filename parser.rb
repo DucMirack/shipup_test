@@ -7,6 +7,10 @@ class Parser
     data["packages"]
   end
 
+  def country_distances
+    data["country_distance"]
+  end
+
   def data
     JSON.parse(input_content)
   end
